@@ -90,3 +90,6 @@ ENV/
 
 # pycharm project settings
 .idea
+
+# .xlsx-files
+*.xlsx
