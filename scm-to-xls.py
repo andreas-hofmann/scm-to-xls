@@ -104,7 +104,7 @@ class HgAccessor(ScmAccessor):
             e.diff = []
             data.append(e)
 
-            if self._start_rev and c.id.hex == self._start_rev:
+            if self._start_rev and str(c.rev, 'utf-8') == self._start_rev:
                 break
 
         return data
