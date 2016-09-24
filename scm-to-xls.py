@@ -7,10 +7,10 @@ from pygit2 import Repository
 from pygit2 import GIT_SORT_TIME, GIT_DIFF_STATS_FULL
 
 import hglib
+import svn.local
 
 from openpyxl import Workbook
 from openpyxl.styles import colors, Font, Color, Alignment, Border, Side, PatternFill
-from openpyxl import cell
 
 from optparse import OptionParser
 from datetime import datetime
@@ -113,7 +113,33 @@ class HgAccessor(ScmAccessor):
 class SvnAccessor(ScmAccessor):
     def __init__(self, repo_path, start_rev):
         super().__init__(repo_path=repo_path, start_rev=start_rev)
-        raise NotImplementedError("Implement me!")
+        self._scm = svn.local.LocalClient(path.join(repo_path))
+
+    def get_log(self):
+        data = []
+
+        for c in self._scm.log_default():
+            #diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
+
+            #diff = diff.splitlines()
+            #if len(diff) >= 1:
+            #    diff = diff[:-1]
+
+            #stripped_diff = [ d.split("|")[0].strip() for d in diff ]
+
+            e = LogEntry()
+            e.id = c.revision
+            e.msg = c.msg
+            e.author = c.author
+            #e.email = c.author
+            e.time = c.date
+            e.diff = []
+            data.append(e)
+
+            if self._start_rev and c.id.hex == self._start_rev:
+                break
+
+        return data
 
 
 
