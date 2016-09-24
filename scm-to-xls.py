@@ -217,7 +217,7 @@ def main():
     parser.add_option("-H", "--history", dest="history",
                       help="If set, the commit history is exported.",
                       action="store_true")
-    parser.add_option("-R", "--repo", dest="repo",
+    parser.add_option("-d", "--directory", dest="repo",
                       help="Path to the repository. If omitted, the location "
                             "the script is placed at is used.")
     parser.add_option("-r", "--rev", dest="rev",
