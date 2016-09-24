@@ -15,6 +15,13 @@ from datetime import datetime
 
 from string import ascii_uppercase
 
+
+USAGE="""
+This script allows to export version history from various Source Control Management
+tools to excel spreadsheets (.xlsx). The main purpose is to allow a quick an easy
+export for impact analysis."""
+
+
 class LogEntry:
     def __init__(self):
         self.id = None
@@ -167,7 +174,7 @@ class ImpactStatementWriter(Writer):
 
 
 def main():
-    parser = OptionParser()
+    parser = OptionParser(usage=USAGE)
 
     parser.add_option("-o", "--outfile", dest="outfile",
                       help="Output file to write to.")
