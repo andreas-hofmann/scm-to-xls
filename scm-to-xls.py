@@ -13,6 +13,8 @@ from openpyxl import cell
 from optparse import OptionParser
 from datetime import datetime
 
+from string import ascii_uppercase
+
 class LogEntry:
     def __init__(self):
         self.id = None
@@ -100,9 +102,14 @@ class Writer:
             ws.append([datetime.fromtimestamp(d.time).strftime("%Y-%m-%d %H:%M:%S"),
                        str(d.id), str(d.msg), str(d.author),
                        "\n".join(d.diff)])
+
+            for c in ascii_uppercase[:len(self._columns)]:
+                ws[c+str(ws.max_row)].alignment = Alignment(vertical="top")
+
             ws["B"+str(ws.max_row)].font = Font(name="Monospace", size=8)
             ws["C"+str(ws.max_row)].font = Font(size=10)
-            ws["C"+str(ws.max_row)].alignment = Alignment(wrap_text=True)
+            ws["C"+str(ws.max_row)].alignment = Alignment(wrap_text=True, shrink_to_fit=True, vertical="top")
+            #ws.row_dimensions[ws.max_row].height = d.msg.count("\n") * 15
 
     def save(self):
         self._workbook.save(self._filename)
