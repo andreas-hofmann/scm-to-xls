@@ -89,26 +89,26 @@ class HgAccessor(ScmAccessor):
         for c in self._scm.log():
             print("Processing commit %s" % str(c.rev, 'utf-8'))
 
-            #diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
+            diff = self._scm.rawcommand([b'log', b'--stat', b'-r%s' % c.rev]).splitlines()
 
-            #diff = diff.splitlines()
-            #if len(diff) >= 1:
-            #    diff = diff[:-1]
-
-            #stripped_diff = [ d.split("|")[0].strip() for d in diff ]
-
+            commitid = str(diff[0], 'utf-8').lstrip("changeset:").lstrip(" ")
             tag = "" if not c.tags else " - " + str(c.tags, 'utf-8')
 
+            if len(diff[5:-2][0]) == 0:
+                diff = diff[1:]
+
+            stripped_diff = [str(d, 'utf-8').split("|")[0].strip() for d in diff[5:-2]]
+
             e = LogEntry()
-            e.id = str(c.rev, 'utf-8') + tag + " - " + str(c.node, 'utf-8')
+            e.id = commitid + tag
             e.msg = str(c.desc, 'utf-8')
             e.author = str(c.author, 'utf-8').split("<")[0]
             e.email = str(c.author, 'utf-8').split("<")[1].rstrip(">")
             e.time = c.date
-            e.diff = []
+            e.diff = stripped_diff
             data.append(e)
 
-            if self._start_rev and str(c.rev, 'utf-8') == self._start_rev:
+            if self._start_rev and (str(c.rev, 'utf-8') == self._start_rev or commitid == self._start_rev):
                 break
 
         return data
