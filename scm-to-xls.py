@@ -6,6 +6,8 @@ from sys import exit
 from pygit2 import Repository
 from pygit2 import GIT_SORT_TIME, GIT_DIFF_STATS_FULL
 
+import hglib
+
 from openpyxl import Workbook
 from openpyxl.styles import colors, Font, Color, Alignment, Border, Side, PatternFill
 from openpyxl import cell
@@ -30,6 +32,7 @@ class LogEntry:
         self.email = None
         self.time = None
         self.diff = None
+
 
 class ScmAccessor:
     def __init__(self, repo_path, start_rev=None):
@@ -63,7 +66,7 @@ class GitAccessor(ScmAccessor):
             e.msg = c.message.strip("\n")
             e.author = c.committer.name
             e.email = c.committer.email
-            e.time = c.commit_time
+            e.time = datetime.fromtimestamp(c.commit_time)
             e.diff = stripped_diff
             data.append(e)
 
@@ -76,7 +79,35 @@ class GitAccessor(ScmAccessor):
 class HgAccessor(ScmAccessor):
     def __init__(self, repo_path, start_rev=None):
         super().__init__(repo_path=repo_path, start_rev=start_rev)
-        raise NotImplementedError("Implement me!")
+        self._scm = hglib.open(path.join(repo_path))
+
+    def get_log(self):
+        data = []
+
+        for c in self._scm.log():
+            #diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
+
+            #diff = diff.splitlines()
+            #if len(diff) >= 1:
+            #    diff = diff[:-1]
+
+            #stripped_diff = [ d.split("|")[0].strip() for d in diff ]
+
+            tag = "" if not c.tags else " - " + str(c.tags, 'utf-8')
+
+            e = LogEntry()
+            e.id = str(c.rev, 'utf-8') + tag
+            e.msg = str(c.desc, 'utf-8')
+            e.author = str(c.author, 'utf-8').split("<")[0]
+            e.email = str(c.author, 'utf-8').split("<")[1].rstrip(">")
+            e.time = c.date
+            e.diff = []
+            data.append(e)
+
+            if self._start_rev and c.id.hex == self._start_rev:
+                break
+
+        return data
 
 
 class SvnAccessor(ScmAccessor):
@@ -123,9 +154,7 @@ class Writer:
         ws = self._workbook.active
 
         for d in accessor.get_log():
-            ws.append([datetime.fromtimestamp(d.time).strftime("%Y-%m-%d %H:%M:%S"),
-                       str(d.id), str(d.msg), str(d.author),
-                       "\n".join(d.diff)])
+            ws.append([d.time.strftime("%Y-%m-%d %H:%M:%S"), str(d.id), str(d.msg), str(d.author), "\n".join(d.diff)])
 
             for c in ascii_uppercase[:len(self._columns)]:
                 ws[c+str(ws.max_row)].alignment = Alignment(vertical="top")
@@ -171,6 +200,7 @@ class ImpactStatementWriter(Writer):
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
         self._columns.extend(["Affected testcases", "Tested with version"])
         super().write_header()
+
 
 
 def main():
