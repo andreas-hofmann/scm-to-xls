@@ -7,6 +7,8 @@ from pygit2 import Repository
 from pygit2 import GIT_SORT_TIME, GIT_DIFF_STATS_FULL
 
 from openpyxl import Workbook
+from openpyxl.styles import colors, Font, Color, Alignment
+from openpyxl import cell
 
 from optparse import OptionParser
 from datetime import datetime
@@ -47,7 +49,7 @@ class GitAccessor(ScmAccessor):
 
             e = LogEntry()
             e.id = c.id
-            e.msg = c.message
+            e.msg = c.message.strip("\n")
             e.author = c.committer.name
             e.email = c.committer.email
             e.time = c.commit_time
@@ -73,6 +75,17 @@ class Writer:
     def __init__(self, filename):
         self._filename = filename
         self._workbook = Workbook()
+        self._columns = ["Date", "Commit-ID", "Message", "Author", "Changed files"]
+
+        ws = self._workbook.active
+        ws.column_dimensions["A"].width = 20
+        ws.column_dimensions["B"].width = 20
+        ws.column_dimensions["C"].width = 50
+        ws.column_dimensions["D"].width = 20
+        ws.column_dimensions["E"].width = 25
+        ws.column_dimensions["F"].width = 20
+        ws.column_dimensions["G"].width = 20
+        ws.column_dimensions["H"].width = 20
 
     def write_header(self):
         raise RuntimeError("Not to be called in base class")
@@ -84,7 +97,12 @@ class Writer:
         ws = self._workbook.active
 
         for d in accessor.get_log():
-            ws.append([str(d.id), str(d.msg), str(d.author), str(d.email), str(d.time), "\n".join(d.diff)])
+            ws.append([datetime.fromtimestamp(d.time).strftime("%Y-%m-%d %H:%M:%S"),
+                       str(d.id), str(d.msg), str(d.author),
+                       "\n".join(d.diff)])
+            ws["B"+str(ws.max_row)].font = Font(name="Monospace", size=8)
+            ws["C"+str(ws.max_row)].font = Font(size=10)
+            ws["C"+str(ws.max_row)].alignment = Alignment(wrap_text=True)
 
     def save(self):
         self._workbook.save(self._filename)
@@ -99,7 +117,7 @@ class CommitHistoryWriter(Writer):
         ws['A1'] = "Commit history"
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
         ws.append([])
-        ws.append(["Commit-ID", "Message", "Author", "E-Mail", "Date", "Changed files"])
+        ws.append(self._columns)
 
 
 class ImpactStatementWriter(Writer):
@@ -108,10 +126,12 @@ class ImpactStatementWriter(Writer):
 
     def write_header(self):
         ws = self._workbook.active
+
         ws['A1'] = "Impact statement"
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
         ws.append([])
-        ws.append(["Commit-ID", "Message", "Author", "E-Mail", "Date", "Changed files", "Affected testcases", "Tested with version"])
+        self._columns.extend(["Affected testcases", "Tested with version"])
+        ws.append(self._columns)
 
 
 def main():
