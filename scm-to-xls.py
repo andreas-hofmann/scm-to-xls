@@ -96,7 +96,7 @@ class HgAccessor(ScmAccessor):
             tag = "" if not c.tags else " - " + str(c.tags, 'utf-8')
 
             e = LogEntry()
-            e.id = str(c.rev, 'utf-8') + tag
+            e.id = str(c.rev, 'utf-8') + tag + " - " + str(c.node, 'utf-8')
             e.msg = str(c.desc, 'utf-8')
             e.author = str(c.author, 'utf-8').split("<")[0]
             e.email = str(c.author, 'utf-8').split("<")[1].rstrip(">")
