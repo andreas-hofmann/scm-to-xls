@@ -98,6 +98,7 @@ class CommitHistoryWriter(Writer):
         ws = self._workbook.active
         ws['A1'] = "Commit history"
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
+        ws.append([])
         ws.append(["Commit-ID", "Message", "Author", "E-Mail", "Date", "Changed files"])
 
 
@@ -109,6 +110,7 @@ class ImpactStatementWriter(Writer):
         ws = self._workbook.active
         ws['A1'] = "Impact statement"
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
+        ws.append([])
         ws.append(["Commit-ID", "Message", "Author", "E-Mail", "Date", "Changed files", "Affected testcases", "Tested with version"])
 
 
