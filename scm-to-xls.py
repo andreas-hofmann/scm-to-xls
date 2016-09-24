@@ -7,7 +7,7 @@ from pygit2 import Repository
 from pygit2 import GIT_SORT_TIME, GIT_DIFF_STATS_FULL
 
 from openpyxl import Workbook
-from openpyxl.styles import colors, Font, Color, Alignment
+from openpyxl.styles import colors, Font, Color, Alignment, Border, Side, PatternFill
 from openpyxl import cell
 
 from optparse import OptionParser
@@ -90,7 +90,18 @@ class Writer:
         ws.column_dimensions["H"].width = 20
 
     def write_header(self):
-        raise RuntimeError("Not to be called in base class")
+        ws = self._workbook.active
+
+        ws.append([])
+        ws.append(self._columns)
+
+        for c in ascii_uppercase[:len(self._columns)]:
+            ws[c+str(ws.max_row)].font = Font(bold=True)
+            ws[c+str(ws.max_row)].fill = PatternFill("solid", fgColor="000099ff")
+            ws[c+str(ws.max_row)].border = Border(top=Side(border_style="thin", color="00000000"),
+                                                  left=Side(border_style="thin", color="00000000"),
+                                                  right=Side(border_style="thin", color="00000000"),
+                                                  bottom=Side(border_style="thin", color="00000000"))
 
     def write_data(self):
         raise RuntimeError("Not to be called in base class")
@@ -111,6 +122,15 @@ class Writer:
             ws["C"+str(ws.max_row)].alignment = Alignment(wrap_text=True, shrink_to_fit=True, vertical="top")
             #ws.row_dimensions[ws.max_row].height = d.msg.count("\n") * 15
 
+            for c in ascii_uppercase[:len(self._columns)]:
+                ws[c+str(ws.max_row)].border = Border(left=Side(border_style="thin", color="00000000"),
+                                                      right=Side(border_style="thin", color="00000000"))
+
+        for c in ascii_uppercase[:len(self._columns)]:
+            ws[c+str(ws.max_row)].border = Border(left=Side(border_style="thin", color="00000000"),
+                                                  right=Side(border_style="thin", color="00000000"),
+                                                  bottom=Side(border_style="thin", color="00000000"))
+
     def save(self):
         self._workbook.save(self._filename)
 
@@ -123,8 +143,8 @@ class CommitHistoryWriter(Writer):
         ws = self._workbook.active
         ws['A1'] = "Commit history"
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
-        ws.append([])
-        ws.append(self._columns)
+
+        super().write_header()
 
 
 class ImpactStatementWriter(Writer):
@@ -136,9 +156,8 @@ class ImpactStatementWriter(Writer):
 
         ws['A1'] = "Impact statement"
         ws['B1'] = "Generated on %s" % datetime.now().isoformat(" ")
-        ws.append([])
         self._columns.extend(["Affected testcases", "Tested with version"])
-        ws.append(self._columns)
+        super().write_header()
 
 
 def main():
