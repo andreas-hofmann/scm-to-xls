@@ -119,24 +119,20 @@ class SvnAccessor(ScmAccessor):
         data = []
 
         for c in self._scm.log_default():
-            #diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
-
-            #diff = diff.splitlines()
-            #if len(diff) >= 1:
-            #    diff = diff[:-1]
-
-            #stripped_diff = [ d.split("|")[0].strip() for d in diff ]
+            try:
+                diff = [d['path'].lstrip(str(self._repo_path)) if d['kind'] == 'file' else "" for d in self._scm.diff_summary(c.revision-1, c.revision)]
+            except:
+                diff = ""
 
             e = LogEntry()
             e.id = c.revision
             e.msg = c.msg
             e.author = c.author
-            #e.email = c.author
             e.time = c.date
-            e.diff = []
+            e.diff = diff
             data.append(e)
 
-            if self._start_rev and c.id.hex == self._start_rev:
+            if self._start_rev and str(c.revision) == self._start_rev:
                 break
 
         return data
