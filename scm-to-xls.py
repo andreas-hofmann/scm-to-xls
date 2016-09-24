@@ -25,21 +25,23 @@ class LogEntry:
         self.diff = None
 
 class ScmAccessor:
-    def __init__(self, repo_path):
+    def __init__(self, repo_path, start_rev=None):
         self._repo_path = repo_path
         self._scm = None
+        self._start_rev  = start_rev
 
     def get_log(self):
         raise RuntimeError("Not meant to be called in parent class")
 
 
 class GitAccessor(ScmAccessor):
-    def __init__(self, repo_path):
-        super().__init__(repo_path)
+    def __init__(self, repo_path, start_rev=None):
+        super().__init__(repo_path=repo_path, start_rev=start_rev)
         self._scm = Repository(path.join(repo_path))
 
     def get_log(self):
         data = []
+
         for c in self._scm.walk(self._scm.head.target, GIT_SORT_TIME):
             diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
 
@@ -57,18 +59,22 @@ class GitAccessor(ScmAccessor):
             e.time = c.commit_time
             e.diff = stripped_diff
             data.append(e)
+
+            if self._start_rev and c.id.hex == self._start_rev:
+                break
+
         return data
 
 
 class HgAccessor(ScmAccessor):
-    def __init__(self, repo_path):
-        super().__init__(repo_path)
+    def __init__(self, repo_path, start_rev=None):
+        super().__init__(repo_path=repo_path, start_rev=start_rev)
         raise NotImplementedError("Implement me!")
 
 
 class SvnAccessor(ScmAccessor):
-    def __init__(self, repo_path):
-        super().__init__(repo_path)
+    def __init__(self, repo_path, start_rev):
+        super().__init__(repo_path=repo_path, start_rev=start_rev)
         raise NotImplementedError("Implement me!")
 
 
@@ -174,9 +180,12 @@ def main():
     parser.add_option("-H", "--history", dest="history",
                       help="If set, the commit history is exported.",
                       action="store_true")
-    parser.add_option("-r", "--repo", dest="repo",
+    parser.add_option("-R", "--repo", dest="repo",
                       help="Path to the repository. If omitted, the location "
                             "the script is placed at is used.")
+    parser.add_option("-r", "--rev", dest="rev",
+                      help="Revision to start. If omitted, the complete history "
+                           "is used. Dependent on the SCM used!", default=None)
 
     options, args = parser.parse_args()
 
@@ -189,15 +198,16 @@ def main():
         exit(-1)
 
     rpath = options.repo if options.repo else getcwd()
+    rev = options.rev
 
     accessor = None
 
     if options.scm == "git":
-        accessor = GitAccessor(rpath)
+        accessor = GitAccessor(rpath, rev)
     elif options.scm == "hg":
-        accessor = HgAccessor(rpath)
+        accessor = HgAccessor(rpath, rev)
     elif options.scm == "svn":
-        accessor = SvnAccessor(rpath)
+        accessor = SvnAccessor(rpath, rev)
 
     outfile = options.outfile
 
