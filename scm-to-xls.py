@@ -53,6 +53,8 @@ class GitAccessor(ScmAccessor):
         data = []
 
         for c in self._scm.walk(self._scm.head.target, GIT_SORT_TIME):
+            print("Processing commit %s" % c.id)
+
             diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
 
             diff = diff.splitlines()
@@ -85,6 +87,8 @@ class HgAccessor(ScmAccessor):
         data = []
 
         for c in self._scm.log():
+            print("Processing commit %s" % str(c.rev, 'utf-8'))
+
             #diff = self._scm.diff(c, c.parents[0]).stats.format(GIT_DIFF_STATS_FULL, 1) if c.parents else ""
 
             #diff = diff.splitlines()
@@ -119,6 +123,8 @@ class SvnAccessor(ScmAccessor):
         data = []
 
         for c in self._scm.log_default():
+            print("Processing commit %i" % c.revision)
+
             try:
                 diff = [d['path'].lstrip(str(self._repo_path)) if d['kind'] == 'file' else "" for d in self._scm.diff_summary(c.revision-1, c.revision)]
             except:
