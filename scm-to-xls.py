@@ -3,12 +3,6 @@
 from os import path, getcwd
 from sys import exit
 
-from pygit2 import Repository
-from pygit2 import GIT_SORT_TIME, GIT_DIFF_STATS_FULL
-
-import hglib
-import svn.local
-
 from openpyxl import Workbook
 from openpyxl.styles import colors, Font, Color, Alignment, Border, Side, PatternFill
 
@@ -16,6 +10,29 @@ from optparse import OptionParser
 from datetime import datetime
 
 from string import ascii_uppercase
+
+_git_available = False
+_hg_available = False
+_svn_available = False
+
+try:
+    from pygit2 import Repository
+    from pygit2 import GIT_SORT_TIME, GIT_DIFF_STATS_FULL
+    _git_available = True
+except ImportError:
+    pass
+
+try:
+    import hglib
+    _hg_available = True
+except ImportError:
+    pass
+
+try:
+    import svn.local
+    _svn_available = True
+except ImportError:
+    pass
 
 
 USAGE="""
@@ -268,10 +285,19 @@ def main():
     accessor = None
 
     if options.scm == "git":
+        if not _git_available:
+            print("Git support not available. Please install pygit2.")
+            sys.exit(-1)
         accessor = GitAccessor(rpath, rev)
     elif options.scm == "hg":
+        if not _hg_available:
+            print("Mercurial support not available. Please install python-hglib.")
+            sys.exit(-1)
         accessor = HgAccessor(rpath, rev)
     elif options.scm == "svn":
+        if not _svn_available:
+            print("SVN support not available. Please install svn.")
+            sys.exit(-1)
         accessor = SvnAccessor(rpath, rev)
 
     outfile = options.outfile
