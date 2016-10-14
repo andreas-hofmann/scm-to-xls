@@ -1,0 +1,4 @@
+openpyxl==2.4.0
+pygit2==0.24.1
+python-hglib==2.2
+svn==0.3.44
